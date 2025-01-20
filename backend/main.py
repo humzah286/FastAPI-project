@@ -1,12 +1,12 @@
 from typing import Optional, List
 from fastapi import FastAPI, HTTPException
 from fastapi.params import Depends
-from sqlalchemy import create_engine, String
-from sqlalchemy.orm import sessionmaker, Session, DeclarativeBase, Mapped, mapped_column
+from pymongo import MongoClient
 from pydantic import BaseModel
 from contextlib import asynccontextmanager
 import hashlib
 import time
+import os
 
 
 class Item(BaseModel):
@@ -23,101 +23,41 @@ class ItemUpdate(BaseModel):
     description: Optional[str]
 
 
-DATABASE_URL = "sqlite:///test.db"
-
-
-def generate_id(name: str, description: str) -> str:
-    raw_data = f"{name}-{description}-{time.time()}"
-    return hashlib.sha256(raw_data.encode()).hexdigest()
-
-
-class Base(DeclarativeBase):
-    pass
-
-class DBItem(Base):
-    __tablename__ = "items"
-
-    id = mapped_column(String(64), primary_key=True)  # Store the hash as a string
-    name = mapped_column(String(30))
-    description = mapped_column(String(100))
-
-
-    def __init__(self, name: str, description: str):
-        self.name = name
-        self.description = description
-        self.id = generate_id(name, description)
-
-
-
-engine = create_engine(DATABASE_URL)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
+DATABASE_URL = os.getenv("MONGO_URI")
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup: Create all database tables
-    Base.metadata.create_all(bind=engine)
+    # Startup:
+    app.mongodb_client = MongoClient(DATABASE_URL)
+    app.mongodb = app.mongodb_client["mydatabase"]
     yield
-    # Shutdown: (Optional) Drop all tables or perform other cleanup
-    # Base.metadata.drop_all(bind=engine)
+    # Shutdown: 
+    app.mongodb_client.close()
 
 
 app = FastAPI(lifespan=lifespan)
 
 
-# Dependency to get the database session
-def get_db():
-    database = SessionLocal()
-    try:
-        yield database
-    finally:
-        database.close()
+@app.get("/")
+def read_root():
+    return {"message": "Hello, MongoDB is connected"}
 
 
-@app.post("/items")
-def create_item(item: ItemCreate, db: Session = Depends(get_db)) -> Item:
-    db_item = DBItem(**item.dict())
-    db.add(db_item)
-    db.commit()
-    db.refresh(db_item)
-    return Item(**db_item.__dict__)
+@app.post("/items/")
+def create_item(item: ItemCreate):
+    collection = app.mongodb["items"]
+    print(item)
+    item = item.dict()
+    result = collection.insert_one(item)
+    print("done: ", result)
+    return {"id": str(result.inserted_id), "name": item["name"], "description": item['description']}
 
 
-@app.get("/items/{item_id}")
-def read_item(item_id: str, db: Session = Depends(get_db)) -> Item:
-    db_item = db.query(DBItem).filter(DBItem.id == item_id).first()
-    if db_item is None:
-        raise HTTPException(status_code=404, detail="Item not found")
-    return Item(**db_item.__dict__)
-
-@app.get("/items")
-def read_all_items(db: Session = Depends(get_db)) -> List[Item]:
-    db_items = db.query(DBItem).all()
-    if db_items is None:
-        raise HTTPException(status_code=404, detail="Item not found")
-    return [Item(**db_item.__dict__) for db_item in db_items]
-
-
-@app.put("/items/{item_id}")
-def update_item(item_id: str, item: ItemUpdate, db: Session = Depends(get_db)) -> Item:
-    db_item = db.query(DBItem).filter(DBItem.id == item_id).first()
-    if db_item is None:
-        raise HTTPException(status_code=404, detail="Item not found")
-    for key, value in item.dict().items():
-        setattr(db_item, key, value)
-    db.commit()
-    db.refresh(db_item)
-    return Item(**db_item.__dict__)
-
-
-@app.delete("/items/{item_id}")
-def delete_item(item_id: str, db: Session = Depends(get_db)) -> Item:
-    db_item = db.query(DBItem).filter(DBItem.id == item_id).first()
-    if db_item is None:
-        raise HTTPException(status_code=404, detail="Item not found")
-    db.delete(db_item)
-    db.commit()
-    return Item(**db_item.__dict__)
+@app.get("/items/")
+def list_items():
+    collection = app.mongodb["items"]
+    items = list(collection.find({}, {"_id": 0}))  # Exclude the _id field for simplicity
+    return {"items": items}
 
 

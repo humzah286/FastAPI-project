@@ -10,13 +10,13 @@ RUN apt-get update && apt-get install -y \
     rm -rf /var/lib/apt/lists/*
 
 # Copy requirements file
-COPY requirements.txt .
+COPY backend/requirements.txt .
 
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the application code
-COPY . .
+COPY backend .
 
 # Expose the FastAPI port
 EXPOSE 8000
