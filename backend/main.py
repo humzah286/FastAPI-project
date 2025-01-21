@@ -57,7 +57,10 @@ def create_item(item: ItemCreate):
 @app.get("/items/")
 def list_items():
     collection = app.mongodb["items"]
-    items = list(collection.find({}, {"_id": 0}))  # Exclude the _id field for simplicity
+    items = []
+    for item in collection.find({}):  # Include all fields, including _id
+        item["id"] = str(item.pop("_id"))  # Rename _id to id and convert to string
+        items.append(item)
     return {"items": items}
 
 
