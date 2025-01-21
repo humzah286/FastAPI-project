@@ -1,19 +1,24 @@
 # Use an official Python runtime as a parent image
-FROM python:3.10-slim
+FROM python:3.12-slim
 
 # Set the working directory
 WORKDIR /app
 
 # Install system dependencies and Python dependencies
 RUN apt-get update && apt-get install -y \
+    curl \
     build-essential && \
-    rm -rf /var/lib/apt/lists/*
+    curl -sSL https://install.python-poetry.org | python3 - && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Add Poetry to PATH
+ENV PATH="/root/.local/bin:$PATH"
 
 # Copy requirements file
-COPY backend/requirements.txt .
+COPY backend/pyproject.toml backend/poetry.lock* /app/
 
 # Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+RUN poetry config virtualenvs.create false && poetry install --no-root --no-interaction --no-ansi
 
 # Copy the application code
 COPY backend .
