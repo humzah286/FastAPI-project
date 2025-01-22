@@ -1,5 +1,5 @@
 from typing import Optional, List
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Body
 from fastapi.params import Depends
 from pymongo import MongoClient
 from pydantic import BaseModel
@@ -40,11 +40,15 @@ class ItemUpdate(BaseModel):
     name: Optional[str]
     description: Optional[str]
 
+class CacheItem(BaseModel):
+    key: str
+    value: str
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup:
-    startup_redis()
+    await startup_redis()
     app.mongodb_client = MongoClient(DATABASE_URL)
     app.mongodb = app.mongodb_client["mydatabase"]
     yield
@@ -81,7 +85,8 @@ def list_items():
 
 
 @app.post("/cache/")
-async def set_cache(key: str, value: str):
+async def set_cache(key: str = Body(...), value: str = Body(...)):
+    print(f"key : {key}, value : {value}")
     await redis_client.set(key, value, ex=3600)  # Store value with a 1-hour expiration
     return {"message": f"Key '{key}' set with value '{value}'"}
 
