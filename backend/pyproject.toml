@@ -13,6 +13,9 @@ pydantic = "^2.10.5"
 pymongo = "^4.10.1"
 uvicorn = "^0.34.0"
 redis = {extras = ["async"], version = "^5.2.1"}
+python-jose = {extras = ["cryptography"], version = "^3.3.0"}
+passlib = {extras = ["bcrypt"], version = "^1.7.4"}
+python-multipart = "^0.0.20"
 
 
 [build-system]
