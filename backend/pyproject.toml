@@ -9,7 +9,7 @@ readme = "README.md"
 python = "^3.12"
 fastapi = "^0.115.6"
 pytest = "^8.3.4"
-pydantic = "^2.10.5"
+pydantic = {extras = ["email"], version = "^2.10.6"}
 pymongo = "^4.10.1"
 uvicorn = "^0.34.0"
 redis = {extras = ["async"], version = "^5.2.1"}
