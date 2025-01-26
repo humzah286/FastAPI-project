@@ -5,7 +5,7 @@ from starlette import status
 from passlib.context import CryptContext
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 from typing import Annotated
-from main import app
+from database import get_db
 import os
 
 router = APIRouter(
@@ -13,6 +13,7 @@ router = APIRouter(
     tags=['auth']
 )
 
+mongoClient = get_db()
 
 SECRET_KEY = os.getenv('SECRET_KEY')
 ALOGORITHM = 'HS256'
@@ -21,12 +22,14 @@ ALOGORITHM = 'HS256'
 bcrypt_context = CryptContext(schemes=['bcrypt'], deprecated='auto')
 oauth2_bearer = OAuth2PasswordBearer(tokenUrl='auth/token')
 
+
 class CreateUserRequest(BaseModel):
     firstName: str
     lastName: str
     country: str
     email: EmailStr
     password: str
+
 
 class Token(BaseModel):
     access_token: str
@@ -37,9 +40,9 @@ class Token(BaseModel):
 @router.post('/', status_code=status.HTTP_201_CREATED)
 async def create_user(create_user_request: CreateUserRequest):
 
-    collection = app.mongodb["users"]
+    collection = mongoClient["mydatabase"]["users"]
     print(create_user_request)
-    create_user_request = create_user_request.dict()
+    # create_user_request = create_user_request.dict()
 
     user = {
         "firstName":create_user_request.firstName,

@@ -4,6 +4,7 @@ from fastapi.params import Depends
 from pymongo import MongoClient
 from pydantic import BaseModel
 from contextlib import asynccontextmanager
+from database import get_db
 import hashlib
 import time
 import os
@@ -50,7 +51,7 @@ class CacheItem(BaseModel):
 async def lifespan(app: FastAPI):
     # Startup:
     await startup_redis()
-    app.mongodb_client = MongoClient(DATABASE_URL)
+    app.mongodb_client = get_db()
     app.mongodb = app.mongodb_client["mydatabase"]
     yield
     # Shutdown: 
