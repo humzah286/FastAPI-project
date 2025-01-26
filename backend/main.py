@@ -53,6 +53,7 @@ async def lifespan(app: FastAPI):
     app.mongodb = app.mongodb_client["mydatabase"]
     yield
     # Shutdown: 
+    await redis_client.close()
     app.mongodb_client.close()
 
 
