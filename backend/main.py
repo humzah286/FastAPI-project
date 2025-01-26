@@ -8,6 +8,7 @@ import hashlib
 import time
 import os
 import redis.asyncio as redis
+import auth
 
 
 DATABASE_URL = os.getenv("MONGO_URI")
@@ -58,6 +59,8 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan)
+app.include_router(auth.router)
+
 
 
 @app.get("/")
