@@ -1,5 +1,5 @@
 from jose import jwt, JWTError
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, validator
 from fastapi import APIRouter, HTTPException, Body
 from starlette import status
 from passlib.context import CryptContext
@@ -30,6 +30,22 @@ class CreateUserRequest(BaseModel):
     country: str
     email: EmailStr
     password: str
+
+    @validator("password")
+    def validate_password(cls, password: str) -> str:
+        if len(password) < 8:
+            raise ValueError("Password must be at least 8 characters long")
+        
+        if not any(char.isdigit() for char in password):
+            raise ValueError("Password must contain at least one digit")
+        
+        if not any(char.isupper() for char in password):
+            raise ValueError("Password must contain at least one uppercase letter")
+        
+        if not any(char.islower() for char in password):
+            raise ValueError("Password must contain at least one lowercase letter")
+        
+        return password
 
 
 class Token(BaseModel):
