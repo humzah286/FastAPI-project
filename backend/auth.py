@@ -7,6 +7,8 @@ from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 from typing import Annotated
 from pymongo.errors import DuplicateKeyError
 from database import get_db
+from datetime import datetime, timedelta
+import time
 import os
 
 router = APIRouter(
@@ -106,5 +108,11 @@ def get_user_by_email_and_password(email: str = Body(...), password: str = Body(
         "email": user["email"],
         "country": user["country"]
     }
+
+
+def create_access_token(username: str, user_id: str, expires_delta: timedelta):
+    expires = time.time() + expires_delta
+    encode = {'sub': username, 'id': user_id, 'exp': expires}
+    return jwt.encode(encode, SECRET_KEY, algorithm=ALOGORITHM)
 
 
