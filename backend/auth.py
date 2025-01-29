@@ -19,7 +19,7 @@ router = APIRouter(
 mongoClient = get_db()
 
 SECRET_KEY = os.getenv('SECRET_KEY')
-ALOGORITHM = 'HS256'
+ALGORITHM = 'HS256'
 
 
 bcrypt_context = CryptContext(schemes=['bcrypt'], deprecated='auto')
@@ -110,9 +110,21 @@ def get_user_by_email_and_password(email: str = Body(...), password: str = Body(
     }
 
 
-def create_access_token(username: str, user_id: str, expires_delta: timedelta):
-    expires = time.time() + expires_delta
-    encode = {'sub': username, 'id': user_id, 'exp': expires}
-    return jwt.encode(encode, SECRET_KEY, algorithm=ALOGORITHM)
+def create_access_token(username: str, user_id: str, expires_delta: timedelta = None):
+    """
+    Generate an access token with a short expiry time.
+    """
+    expire = datetime.utcnow() + (expires_delta or timedelta(minutes=os.getenv('ACCESS_TOKEN_EXPIRE_MINUTES')))
+    payload = {"sub": username, "id": user_id, "exp": expire}
+    return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
+
+
+def create_refresh_token(username: str, user_id: str, expires_delta: timedelta = None):
+    """
+    Generate a refresh token with a long expiry time.
+    """
+    expire = datetime.utcnow() + (expires_delta or timedelta(days=os.getenv('REFRESH_TOKEN_EXPIRE_DAYS')))
+    payload = {"sub": username, "id": user_id, "exp": expire}
+    return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
 
 
