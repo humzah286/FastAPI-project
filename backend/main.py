@@ -5,12 +5,14 @@ from pymongo import MongoClient
 from pydantic import BaseModel
 from contextlib import asynccontextmanager
 from database import get_db
+from dotenv import load_dotenv
 import hashlib
 import time
 import os
 import redis.asyncio as redis
 import auth
 
+load_dotenv()
 
 DATABASE_URL = os.getenv("MONGO_URI")
 REDIS_HOST = os.getenv("REDIS_HOST")
