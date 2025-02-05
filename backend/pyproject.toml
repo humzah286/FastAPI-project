@@ -16,6 +16,7 @@ redis = {extras = ["async"], version = "^5.2.1"}
 python-jose = {extras = ["cryptography"], version = "^3.3.0"}
 passlib = {extras = ["bcrypt"], version = "^1.7.4"}
 python-multipart = "^0.0.20"
+python-dotenv = "^1.0.1"
 
 
 [build-system]
