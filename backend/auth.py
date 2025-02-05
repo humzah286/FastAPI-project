@@ -6,6 +6,7 @@ from passlib.context import CryptContext
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 from typing import Annotated
 from pymongo.errors import DuplicateKeyError
+from dotenv import load_dotenv
 from database import get_db
 from datetime import datetime, timedelta
 import time
@@ -17,6 +18,8 @@ router = APIRouter(
 )
 
 mongoClient = get_db()
+
+load_dotenv()
 
 SECRET_KEY = os.getenv('SECRET_KEY')
 ALGORITHM = 'HS256'
@@ -101,12 +104,13 @@ def get_user_by_email_and_password(email: str = Body(...), password: str = Body(
     if not verify_password(password, user["password"]):
         raise HTTPException(status_code=401, detail="Invalid password")
     
+    access_token = create_access_token(user["email"], str(user["_id"]))
+    refresh_token = create_refresh_token(user["email"], str(user["_id"]))
+    
     return {
-        "id": str(user["_id"]),
-        "firstName": user["firstName"],
-        "lastName": user["lastName"],
-        "email": user["email"],
-        "country": user["country"]
+        "access_token": access_token,
+        "refresh_token": refresh_token,
+        "token_type": "bearer"
     }
 
 
@@ -114,7 +118,8 @@ def create_access_token(username: str, user_id: str, expires_delta: timedelta = 
     """
     Generate an access token with a short expiry time.
     """
-    expire = datetime.utcnow() + (expires_delta or timedelta(minutes=os.getenv('ACCESS_TOKEN_EXPIRE_MINUTES')))
+    print("secret_key : ", SECRET_KEY)
+    expire = datetime.utcnow() + (expires_delta or timedelta(minutes=int(os.getenv('ACCESS_TOKEN_EXPIRE_MINUTES'))))
     payload = {"sub": username, "id": user_id, "exp": expire}
     return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
 
@@ -123,7 +128,8 @@ def create_refresh_token(username: str, user_id: str, expires_delta: timedelta =
     """
     Generate a refresh token with a long expiry time.
     """
-    expire = datetime.utcnow() + (expires_delta or timedelta(days=os.getenv('REFRESH_TOKEN_EXPIRE_DAYS')))
+    print("secret_key : ", SECRET_KEY)
+    expire = datetime.utcnow() + (expires_delta or timedelta(days=int(os.getenv('REFRESH_TOKEN_EXPIRE_DAYS'))))
     payload = {"sub": username, "id": user_id, "exp": expire}
     return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
 
