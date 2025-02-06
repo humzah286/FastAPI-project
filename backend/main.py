@@ -10,7 +10,7 @@ import hashlib
 import time
 import os
 import redis.asyncio as redis
-import auth
+import auth.auth as auth
 
 load_dotenv()
 
