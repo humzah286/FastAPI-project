@@ -78,8 +78,16 @@ async def create_user(create_user_request: CreateUserRequest):
         raise HTTPException(
             status_code=400, detail="A user with this email already exists"
         )
-    print("done: ", result)
-    return {"id": str(result.inserted_id), "email": user["email"], "firstName": user['firstName']}
+    
+    
+    access_token = create_access_token(user["email"], str(user["_id"]))
+    refresh_token = create_refresh_token(user["email"], str(user["_id"]))
+    
+    return {
+        "access_token": access_token,
+        "refresh_token": refresh_token,
+        "token_type": "bearer"
+    }
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
