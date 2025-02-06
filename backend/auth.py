@@ -142,3 +142,29 @@ def create_refresh_token(username: str, user_id: str, expires_delta: timedelta =
     return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
 
 
+@router.post("/refresh", response_model=Token, status_code=status.HTTP_200_OK)
+def refresh_access_token(refresh_token: str = Body(..., embed=True)):
+    """
+    Verify the refresh token and generate a new access token.
+    """
+
+    try:
+        print("refresh_token : ", refresh_token)
+        payload = jwt.decode(refresh_token, SECRET_KEY, algorithms=[ALGORITHM])
+        username = payload.get("sub")
+        user_id = payload.get("id")
+
+        if not username or not user_id:
+            raise HTTPException(status_code=401, detail="Invalid refresh token")
+
+        # Generate a new access token
+        new_access_token = create_access_token(username, user_id)
+
+        return {"access_token": new_access_token, "token_type": "bearer"}
+
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Refresh token expired")
+    except jwt.JWTError:
+        raise HTTPException(status_code=401, detail="Invalid refresh token")
+
+
