@@ -13,7 +13,7 @@ router = APIRouter(
 mongoClient = get_db()
 
 
-@router.post('/', status_code=status.HTTP_201_CREATED)
+@router.post('/register', status_code=status.HTTP_201_CREATED)
 async def create_user(create_user_request: CreateUserRequest):
 
     collection = mongoClient["mydatabase"]["users"]
@@ -44,7 +44,7 @@ async def create_user(create_user_request: CreateUserRequest):
     }
 
 
-@router.post('/verify_user', status_code=status.HTTP_200_OK)
+@router.post('/login', status_code=status.HTTP_200_OK)
 def get_user_by_email_and_password(email: str = Body(...), password: str = Body(...)):
     """
     Get the user based on email and verify the password.
